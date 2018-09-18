@@ -3,7 +3,6 @@ package pl.ngame.roguelike;
 import java.awt.Color;
 
 public class Creature {
-
     private World world;
 
     public int x;
@@ -18,15 +17,26 @@ public class Creature {
     private CreatureAi ai;
     public void setCreatureAi(CreatureAi ai) { this.ai = ai; }
 
+    private int maxHp;
+    public int maxHp() { return maxHp; }
 
-    public Creature(World world, char glyph, Color color){
+    private int hp;
+    public int hp() { return hp; }
+
+    private int attackValue;
+    public int attackValue() { return attackValue; }
+
+    private int defenseValue;
+    public int defenseValue() { return defenseValue; }
+
+    public Creature(World world, char glyph, Color color, int maxHp, int attack, int defense){
         this.world = world;
         this.glyph = glyph;
         this.color = color;
-    }
-
-    public void dig(int wx, int wy) {
-        world.dig(wx, wy);
+        this.maxHp = maxHp;
+        this.hp = maxHp;
+        this.attackValue = attack;
+        this.defenseValue = defense;
     }
 
     public void moveBy(int mx, int my){
@@ -39,7 +49,27 @@ public class Creature {
     }
 
     public void attack(Creature other){
-        world.remove(other);
+        int amount = Math.max(0, attackValue() - other.defenseValue());
+
+        amount = (int)(Math.random() * amount) + 1;
+
+        doAction("attack the '%s' for %d damage", other.glyph, amount);
+
+        other.modifyHp(-amount);
+    }
+
+    public void modifyHp(int amount) {
+        hp += amount;
+
+        if (hp < 1) {
+            doAction("die");
+            world.remove(this);
+        }
+    }
+
+    public void dig(int wx, int wy) {
+        world.dig(wx, wy);
+        doAction("dig");
     }
 
     public void update(){
@@ -50,5 +80,40 @@ public class Creature {
         return world.tile(wx, wy).isGround() && world.creature(wx, wy) == null;
     }
 
+    public void notify(String message, Object ... params){
+        ai.onNotify(String.format(message, params));
+    }
 
+    public void doAction(String message, Object ... params){
+        int r = 9;
+        for (int ox = -r; ox < r+1; ox++){
+            for (int oy = -r; oy < r+1; oy++){
+                if (ox*ox + oy*oy > r*r)
+                    continue;
+
+                Creature other = world.creature(x+ox, y+oy);
+
+                if (other == null)
+                    continue;
+
+                if (other == this)
+                    other.notify("You " + message + ".", params);
+                else
+                    other.notify(String.format("The '%s' %s.", glyph, makeSecondPerson(message)), params);
+            }
+        }
+    }
+
+    private String makeSecondPerson(String text){
+        String[] words = text.split(" ");
+        words[0] = words[0] + "s";
+
+        StringBuilder builder = new StringBuilder();
+        for (String word : words){
+            builder.append(" ");
+            builder.append(word);
+        }
+
+        return builder.toString().trim();
+    }
 }

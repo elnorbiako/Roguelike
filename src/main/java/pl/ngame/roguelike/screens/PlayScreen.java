@@ -89,6 +89,8 @@ public class PlayScreen implements Screen {
             case KeyEvent.VK_N: player.moveBy( 1, 1); break;
         }
 
+        world.update();
+
         return this;
     }
 

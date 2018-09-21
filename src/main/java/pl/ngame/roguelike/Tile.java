@@ -4,6 +4,7 @@ import java.awt.Color;
 import asciiPanel.AsciiPanel;
 
 public enum Tile {
+    UNKNOWN(' ', AsciiPanel.white),
     FLOOR((char)250, AsciiPanel.yellow),
     WALL((char)177, AsciiPanel.yellow),
     BOUNDS('x', AsciiPanel.brightBlack),
